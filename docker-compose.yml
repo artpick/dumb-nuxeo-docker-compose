@@ -1,0 +1,32 @@
+version: "3.5"
+services:
+  mongodb:
+    image: mongo:3.4
+    container_name: mongo-cvs
+    ports:
+      - "27017:27017"
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.3.2
+    container_name: elastic-cvs
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xms384m -Xmx384m
+  minio1:
+    image: minio/minio:latest
+    container_name: minio-cvs
+    ports:
+      - "9000:9000"
+    hostname: minio1
+    environment:
+      MINIO_ACCESS_KEY: cvs1010importer
+      MINIO_SECRET_KEY: cvs1010importer
+    command: server data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    volumes:
+      - ./docker-stack/data/minio/data:/data:rw
