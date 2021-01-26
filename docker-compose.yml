@@ -2,26 +2,51 @@ version: "3.5"
 services:
   mongodb:
     image: mongo:3.4
-    container_name: mongo-cvs
+    container_name: mongo-cls
     ports:
       - "27017:27017"
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.3.2
-    container_name: elastic-cvs
+    container_name: elastic-cls
     ports:
       - "9200:9200"
+      - "9300:9300"
     environment:
       discovery.type: single-node
       ES_JAVA_OPTS: -Xms384m -Xmx384m
+    volumes:
+      - type: bind
+        source: ./elasticsearch-conf/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data
+    networks:
+      - elk
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:6.3.2
+    container_name: kibana-cls
+    ports:
+      - "5601:5601"
+    volumes:
+      - type: bind
+        source: ./kibana-conf/kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
+        read_only: true
+    depends_on:
+      - elasticsearch
+    networks:
+      - elk
   minio1:
     image: minio/minio:latest
-    container_name: minio-cvs
+    container_name: minio-cls
     ports:
       - "9000:9000"
     hostname: minio1
     environment:
-      MINIO_ACCESS_KEY: cvs1010importer
-      MINIO_SECRET_KEY: cvs1010importer
+      MINIO_ACCESS_KEY: cls1010
+      MINIO_SECRET_KEY: cls1010
     command: server data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -30,3 +55,10 @@ services:
       retries: 3
     volumes:
       - ./docker-stack/data/minio/data:/data:rw
+
+volumes:
+  elasticsearch:
+
+networks:
+  elk:
+    driver: bridge
